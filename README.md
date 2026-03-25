@@ -32,6 +32,8 @@
   当前交付内容、边界和验收建议
 - [ROADMAP.md](./ROADMAP.md)
   下一阶段开发目标、里程碑和优先级
+- [PROJECT_STATUS.md](./PROJECT_STATUS.md)
+  当前项目状态、进行中事项和下一步建议
 
 ## 快速启动
 
