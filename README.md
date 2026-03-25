@@ -1,8 +1,27 @@
 # DeviceApp
 
-四极质谱上位机桌面应用，基于 Qt 6 Widgets + CMake。
+四极质谱上位机桌面应用，基于 `Qt 6 Widgets + CMake`。
 
-## 本地构建
+当前版本已经具备以下基础能力：
+
+- 主窗口与左侧工作区导航
+- 调谐页、监测页、数据页、设置页
+- 设备连接、扫描控制、调谐参数、监测方法、单帧数据保存
+- Mock 设备适配器
+- GitHub Releases 自动发布基础设施
+
+## 文档索引
+
+- [ARCHITECTURE.md](./ARCHITECTURE.md)
+  项目分层、核心类型、页面与服务关系
+- [DEVELOPMENT.md](./DEVELOPMENT.md)
+  本地环境、构建、运行、调试方式
+- [RELEASE.md](./RELEASE.md)
+  GitHub Actions、打包脚本、tag 发布流程
+- [UI_GUIDE.md](./UI_GUIDE.md)
+  当前界面结构、页面职责、UI 约束
+
+## 快速启动
 
 macOS:
 
@@ -12,73 +31,36 @@ cmake --build build -j 4
 open build/device-app.app
 ```
 
-## 发布到 GitHub Releases
+## 目录概览
 
-仓库已经预留：
+```text
+src/
+  app/        应用上下文与服务装配
+  core/       核心类型与应用设置
+  device/     设备适配器接口与实现
+  storage/    本地仓储与 JSON/CSV 持久化
+  ui/         主窗口、页面、弹窗、控件
+scripts/      本地打包脚本
+.github/      GitHub Actions 工作流
+```
+
+## 发布概览
+
+仓库已预留：
 
 - `.github/workflows/release.yml`
 - `scripts/package-macos.sh`
 - `scripts/package-windows.ps1`
 
-发布流程采用 Git tag 触发，默认发布产物：
+发布采用 Git tag 触发，默认产物：
 
 - `device-app-<version>-macos.zip`
 - `device-app-<version>-windows.zip`
 
-### 1. 配置 GitHub 仓库 remote
-
-```bash
-git remote add origin <your-github-repo-url>
-```
-
-### 2. 推送代码
-
-```bash
-git push -u origin main
-```
-
-### 3. 打 tag 触发 Release
-
-```bash
-git tag v0.1.0
-git push origin v0.1.0
-```
-
-GitHub Actions 会自动：
-
-1. 在 macOS runner 构建并打包 `.app`
-2. 在 Windows runner 构建并打包 `.exe` 目录
-3. 创建 GitHub Release
-4. 上传两个平台的 zip 包
-
-## 本地手动打包
-
-### macOS
-
-要求本机已安装 Qt 6，并且能找到 `macdeployqt`。
-
-```bash
-bash ./scripts/package-macos.sh
-```
-
-如果 Qt 不在默认位置，可以显式传入：
-
-```bash
-QT_CMAKE_DIR=/path/to/Qt6/lib/cmake/Qt6 \
-MACDEPLOYQT_BIN=/path/to/macdeployqt \
-bash ./scripts/package-macos.sh
-```
-
-### Windows
-
-在 PowerShell 中执行：
-
-```powershell
-./scripts/package-windows.ps1 -QtCMakeDir "C:\Qt\6.8.2\msvc2022_64\lib\cmake\Qt6"
-```
+详细说明见 [RELEASE.md](./RELEASE.md)。
 
 ## 当前假设
 
-- 第一版自动发布平台为 macOS + Windows
-- 产物为 zip 包，不包含 notarization、codesign 和 Windows 安装器
-- GitHub Actions 使用 `jurplel/install-qt-action` 安装 Qt 6
+- 第一版自动发布平台为 `macOS + Windows`
+- 产物为 zip，不包含 notarization、codesign 和 Windows 安装器
+- 当前运行设备层以 `MockDeviceAdapter` 为主，真实协议仍为预留接入点
