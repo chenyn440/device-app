@@ -1,0 +1,5 @@
+/Users/chenyongnuan/Desktop/百度/device-app/build/CMakeFiles/device-app.dir
+/Users/chenyongnuan/Desktop/百度/device-app/build/CMakeFiles/edit_cache.dir
+/Users/chenyongnuan/Desktop/百度/device-app/build/CMakeFiles/rebuild_cache.dir
+/Users/chenyongnuan/Desktop/百度/device-app/build/CMakeFiles/device-app_autogen_timestamp_deps.dir
+/Users/chenyongnuan/Desktop/百度/device-app/build/CMakeFiles/device-app_autogen.dir

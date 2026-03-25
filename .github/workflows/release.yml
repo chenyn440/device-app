@@ -1,0 +1,113 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  macos-build:
+    runs-on: macos-latest
+    outputs:
+      artifact_name: ${{ steps.meta.outputs.artifact_name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: "6.8.2"
+          cache: true
+
+      - name: Set version
+        id: meta
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "artifact_name=device-app-$VERSION-macos.zip" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve Qt path
+        id: qt
+        shell: bash
+        run: |
+          QT_PREFIX="$(qmake -query QT_INSTALL_PREFIX)"
+          echo "qt_prefix=$QT_PREFIX" >> "$GITHUB_OUTPUT"
+          echo "Qt6_DIR=$QT_PREFIX/lib/cmake/Qt6" >> "$GITHUB_ENV"
+
+      - name: Package macOS
+        shell: bash
+        env:
+          APP_VERSION: ${{ steps.meta.outputs.version }}
+          Qt6_DIR: ${{ env.Qt6_DIR }}
+        run: bash ./scripts/package-macos.sh
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.meta.outputs.artifact_name }}
+          path: dist/${{ steps.meta.outputs.artifact_name }}
+
+  windows-build:
+    runs-on: windows-latest
+    outputs:
+      artifact_name: ${{ steps.meta.outputs.artifact_name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: "6.8.2"
+          cache: true
+
+      - name: Set version
+        id: meta
+        shell: pwsh
+        run: |
+          $version = "${env:GITHUB_REF_NAME}".Replace("v", "")
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "artifact_name=device-app-$version-windows.zip" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Resolve Qt path
+        shell: pwsh
+        run: |
+          $qtPrefix = & qmake -query QT_INSTALL_PREFIX
+          "Qt6_DIR=$qtPrefix\lib\cmake\Qt6" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Package Windows
+        shell: pwsh
+        env:
+          Qt6_DIR: ${{ env.Qt6_DIR }}
+        run: ./scripts/package-windows.ps1 -AppVersion "${{ steps.meta.outputs.version }}"
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.meta.outputs.artifact_name }}
+          path: dist/${{ steps.meta.outputs.artifact_name }}
+
+  release:
+    needs:
+      - macos-build
+      - windows-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+
+      - name: Display artifacts
+        shell: bash
+        run: find release-assets -maxdepth 2 -type f | sort
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release-assets/**/*.zip
+          generate_release_notes: true
