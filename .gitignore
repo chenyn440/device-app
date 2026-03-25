@@ -1,0 +1,27 @@
+# macOS
+.DS_Store
+
+# Build outputs
+build/
+build-*/
+dist/
+
+# CMake
+CMakeUserPresets.json
+cmake-build-*/
+
+# IDE
+.idea/
+.vscode/
+*.user
+*.swp
+*.swo
+
+# Logs
+*.log
+/tmp/
+
+# Archives
+*.zip
+*.tar
+*.tar.gz

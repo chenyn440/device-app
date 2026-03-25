@@ -20,6 +20,18 @@
   GitHub Actions、打包脚本、tag 发布流程
 - [UI_GUIDE.md](./UI_GUIDE.md)
   当前界面结构、页面职责、UI 约束
+- [API_GUIDE.md](./API_GUIDE.md)
+  核心类型、设备接口、服务接口与仓储接口
+- [TEST_PLAN.md](./TEST_PLAN.md)
+  当前测试重点与验证路径
+- [CONTRIBUTING.md](./CONTRIBUTING.md)
+  开发约定、协作方式与文档更新规则
+- [CHANGELOG.md](./CHANGELOG.md)
+  当前版本变更记录
+- [DELIVERY.md](./DELIVERY.md)
+  当前交付内容、边界和验收建议
+- [ROADMAP.md](./ROADMAP.md)
+  下一阶段开发目标、里程碑和优先级
 
 ## 快速启动
 
