@@ -216,6 +216,40 @@
 
 - 管理设备连接和最近连接配置
 
+## Gateway API（新增）
+
+定义位置：
+
+- `src/server/gateway_server.h`
+- `src/server/gateway_server.cpp`
+
+### REST
+
+- `GET /health`
+- `GET /api/status`
+- `POST /api/connection/connect`
+- `POST /api/connection/disconnect`
+- `POST /api/scan/start`
+- `POST /api/scan/stop`
+- `POST /api/tune/apply`
+- `GET /api/monitor/method/list`
+- `POST /api/monitor/method/save`
+- `POST /api/monitor/method/load`
+- `POST /api/frame/save`
+
+响应格式：
+
+- 成功：`{"ok": true, "data": ...}`
+- 失败：`{"ok": false, "error": "message"}`
+
+### 实时事件流
+
+- `GET /api/stream`（SSE）
+- 事件类型：
+  - `status`：仪器状态更新
+  - `frame`：谱图帧更新
+  - `error`：设备错误事件
+
 ### ScanControlService
 
 职责：

@@ -1,0 +1,12 @@
+<RCC>
+  <qresource prefix="/qml">
+    <file alias="Main.qml">../../web-qml/qml/Main.qml</file>
+    <file alias="theme/Theme.qml">../../web-qml/qml/theme/Theme.qml</file>
+    <file alias="theme/Tokens.js">../../web-qml/qml/theme/Tokens.js</file>
+    <file alias="theme/qmldir">../../web-qml/qml/theme/qmldir</file>
+    <file alias="components/AppButton.qml">../../web-qml/qml/components/AppButton.qml</file>
+    <file alias="components/AppCheckBox.qml">../../web-qml/qml/components/AppCheckBox.qml</file>
+    <file alias="components/AppPanel.qml">../../web-qml/qml/components/AppPanel.qml</file>
+    <file alias="components/AppTabHeader.qml">../../web-qml/qml/components/AppTabHeader.qml</file>
+  </qresource>
+</RCC>

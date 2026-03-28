@@ -8,6 +8,7 @@
 - 调谐页、监测页、数据页、设置页
 - 设备连接、扫描控制、调谐参数、监测方法、单帧数据保存
 - Mock 设备适配器
+- Headless 网关（REST + SSE）与 Web 控制台
 - GitHub Releases 自动发布基础设施
 
 ## 文档索引
@@ -20,6 +21,8 @@
   GitHub Actions、打包脚本、tag 发布流程
 - [UI_GUIDE.md](./UI_GUIDE.md)
   当前界面结构、页面职责、UI 约束
+- [DESIGN.md](./DESIGN.md)
+  QML 设计系统与 Token 规范（后续页面复用基线）
 - [API_GUIDE.md](./API_GUIDE.md)
   核心类型、设备接口、服务接口与仓储接口
 - [TEST_PLAN.md](./TEST_PLAN.md)
@@ -45,6 +48,50 @@ cmake --build build -j 4
 open build/device-app.app
 ```
 
+Web + Gateway:
+
+```bash
+cmake -S . -B build-local -DQt6_DIR="$(brew --prefix qt)/lib/cmake/Qt6"
+cmake --build build-local -j 4 --target device-gateway
+./build-local/device-gateway
+# 浏览器访问 http://127.0.0.1:8787/
+```
+
+Browser 快速启动（自动打开浏览器）:
+
+```bash
+bash scripts/local_web_start.sh
+# 停止:
+bash scripts/local_web_stop.sh
+```
+
+QML Desktop (Tune + Monitor 首期):
+
+```bash
+cmake -S . -B build-local -DQt6_DIR="$(brew --prefix qt)/lib/cmake/Qt6"
+cmake --build build-local -j 4 --target device-app-qml
+./build-local/device-app-qml
+```
+
+## 腾讯云部署
+
+一键上传 + 远端构建 + 启动网关（需云主机已安装 Qt6 和 cmake）：
+
+```bash
+bash scripts/deploy-tencent-cloud.sh \
+  --host <腾讯云公网IP> \
+  --user root \
+  --identity ~/.ssh/id_rsa \
+  --remote-dir /opt/device-app \
+  --gateway-port 8787
+```
+
+部署后访问：
+
+```text
+http://<腾讯云公网IP>:8787/
+```
+
 ## 目录概览
 
 ```text
@@ -52,8 +99,10 @@ src/
   app/        应用上下文与服务装配
   core/       核心类型与应用设置
   device/     设备适配器接口与实现
+  server/     Headless 网关（HTTP API + SSE）
   storage/    本地仓储与 JSON/CSV 持久化
   ui/         主窗口、页面、弹窗、控件
+web/          Web 控制台静态资源
 scripts/      本地打包脚本
 .github/      GitHub Actions 工作流
 ```

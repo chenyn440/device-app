@@ -176,6 +176,7 @@ QJsonObject toJson(const TuneParameters &parameters);
 QJsonObject toJson(const MonitorMethod &method);
 QJsonObject toJson(const TemperatureStatus &status);
 QJsonObject toJson(const PeakInfo &peak);
+QJsonObject toJson(const InstrumentStatus &status);
 QJsonObject toJson(const SpectrumFrame &frame);
 QJsonObject toJson(const DataProcessingSettings &settings);
 QJsonObject toJson(const SystemSettings &settings);

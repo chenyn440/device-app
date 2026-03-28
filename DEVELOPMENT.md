@@ -43,6 +43,40 @@ cmake --build build -j 4
 ./build/device-app.app/Contents/MacOS/device-app
 ```
 
+### Gateway（网页访问入口）
+
+```bash
+cmake -S . -B build-local -DQt6_DIR="$(brew --prefix qt)/lib/cmake/Qt6"
+cmake --build build-local -j 4 --target device-gateway
+./build-local/device-gateway
+```
+
+默认监听：
+
+- `http://127.0.0.1:8787/`（Web 控制台）
+- `http://127.0.0.1:8787/api/*`（REST）
+- `http://127.0.0.1:8787/api/stream`（SSE 实时状态流）
+
+可配置环境变量：
+
+- `DEVICE_APP_GATEWAY_PORT`：网关端口，默认 `8787`
+- `DEVICE_APP_WEB_ROOT`：静态资源目录，默认 `<cwd>/web`
+- `DEVICE_APP_API_TOKEN`：非空时启用 Bearer Token 鉴权
+
+### QML Desktop（迁移首期）
+
+```bash
+cmake -S . -B build-local -DQt6_DIR="$(brew --prefix qt)/lib/cmake/Qt6"
+cmake --build build-local -j 4 --target device-app-qml
+./build-local/device-app-qml
+```
+
+当前范围：
+
+- 已迁移页面：`Tune`、`Monitor`
+- 复用层：`src/app`、`src/device`、`src/storage`、`src/core`
+- 入口代码：`src/qml/app_state.*`、`web-qml/qml/Main.qml`
+
 ## 当前开发模式
 
 当前仓库主要围绕 UI 快速迭代，常见流程：

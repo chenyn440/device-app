@@ -165,6 +165,30 @@ QJsonObject toJson(const PeakInfo &peak) {
     return {{"mass", peak.mass}, {"intensity", peak.intensity}};
 }
 
+QJsonObject toJson(const InstrumentStatus &status) {
+    QJsonArray temperatures;
+    for (const TemperatureStatus &temperature : status.temperatures) {
+        temperatures.append(toJson(temperature));
+    }
+
+    QJsonObject switchStates;
+    switchStates["forePump"] = status.switchStates.value(InstrumentSwitch::ForePump, false);
+    switchStates["foreValve"] = status.switchStates.value(InstrumentSwitch::ForeValve, false);
+    switchStates["molecularPump"] = status.switchStates.value(InstrumentSwitch::MolecularPump, false);
+    switchStates["inletValve"] = status.switchStates.value(InstrumentSwitch::InletValve, false);
+    switchStates["filament"] = status.switchStates.value(InstrumentSwitch::Filament, false);
+    switchStates["multiplier"] = status.switchStates.value(InstrumentSwitch::Multiplier, false);
+
+    return {
+        {"connected", status.connected},
+        {"scanning", status.scanning},
+        {"vacuum", QJsonObject{{"valuePa", status.vacuum.valuePa}, {"thresholdPa", status.vacuum.thresholdPa}}},
+        {"temperatures", temperatures},
+        {"switchStates", switchStates},
+        {"lastError", status.lastError},
+    };
+}
+
 QJsonObject toJson(const SpectrumFrame &frame) {
     QJsonArray masses;
     for (double mass : frame.masses) {

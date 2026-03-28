@@ -105,6 +105,22 @@ UI 约束：
 - 再处理留白、边框、字号、按钮尺寸
 - 尽量避免在同一轮同时改布局和样式
 
+## 规范与复用
+
+当前 UI 规范已沉淀为：
+
+- `DESIGN.md`：设计规则与 Token 映射
+- `web-qml/qml/theme/Theme.qml`：Theme 单例入口
+- `web-qml/qml/theme/Tokens.js`：颜色/字号/尺寸 Token
+- `web-qml/qml/components/`：基础组件
+
+后续页面默认复用：
+
+- `AppButton`
+- `AppCheckBox`
+- `AppPanel`
+- `AppTabHeader`
+
 ## 当前 UI 已知问题
 
 - 页面之间样式常量还未完全统一

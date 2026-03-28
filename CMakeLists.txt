@@ -8,7 +8,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Charts Network)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Charts Network Qml Quick QuickControls2)
 
 qt_standard_project_setup()
 
@@ -67,6 +67,49 @@ set(APP_SOURCES
     src/ui/dialogs/chart_settings_dialog.cpp
 )
 
+set(GATEWAY_SOURCES
+    src/server/main.cpp
+    src/server/gateway_server.h
+    src/server/gateway_server.cpp
+    src/app/application_context.h
+    src/app/application_context.cpp
+    src/app/services.h
+    src/app/services.cpp
+    src/core/types.h
+    src/core/types.cpp
+    src/core/app_settings.h
+    src/core/app_settings.cpp
+    src/device/device_adapter.h
+    src/device/mock_device_adapter.h
+    src/device/mock_device_adapter.cpp
+    src/device/real_device_adapter.h
+    src/device/real_device_adapter.cpp
+    src/storage/repositories.h
+    src/storage/repositories.cpp
+)
+
+set(QML_APP_SOURCES
+    src/qml/main.cpp
+    src/qml/app_state.h
+    src/qml/app_state.cpp
+    src/qml/qml_resources.qrc
+    src/app/application_context.h
+    src/app/application_context.cpp
+    src/app/services.h
+    src/app/services.cpp
+    src/core/types.h
+    src/core/types.cpp
+    src/core/app_settings.h
+    src/core/app_settings.cpp
+    src/device/device_adapter.h
+    src/device/mock_device_adapter.h
+    src/device/mock_device_adapter.cpp
+    src/device/real_device_adapter.h
+    src/device/real_device_adapter.cpp
+    src/storage/repositories.h
+    src/storage/repositories.cpp
+)
+
 set(MOC_HEADERS
     src/device/device_adapter.h
     src/device/mock_device_adapter.h
@@ -93,14 +136,50 @@ set(MOC_HEADERS
 )
 
 qt_wrap_cpp(APP_MOC_SOURCES ${MOC_HEADERS})
+set(GATEWAY_MOC_HEADERS
+    src/device/device_adapter.h
+    src/device/mock_device_adapter.h
+    src/device/real_device_adapter.h
+    src/storage/repositories.h
+    src/app/services.h
+    src/server/gateway_server.h
+)
+qt_wrap_cpp(GATEWAY_MOC_SOURCES ${GATEWAY_MOC_HEADERS})
+set(QML_MOC_HEADERS
+    src/device/device_adapter.h
+    src/device/mock_device_adapter.h
+    src/device/real_device_adapter.h
+    src/storage/repositories.h
+    src/app/services.h
+    src/qml/app_state.h
+)
+qt_wrap_cpp(QML_MOC_SOURCES ${QML_MOC_HEADERS})
 
 qt_add_executable(device-app WIN32 MACOSX_BUNDLE ${APP_SOURCES} ${APP_MOC_SOURCES})
+qt_add_executable(device-gateway ${GATEWAY_SOURCES} ${GATEWAY_MOC_SOURCES})
+qt_add_executable(device-app-qml ${QML_APP_SOURCES} ${QML_MOC_SOURCES})
 
 target_include_directories(device-app PRIVATE src)
+target_include_directories(device-gateway PRIVATE src)
+target_include_directories(device-app-qml PRIVATE src)
 
 target_link_libraries(device-app PRIVATE
     Qt6::Core
     Qt6::Widgets
     Qt6::Charts
     Qt6::Network
+)
+
+target_link_libraries(device-gateway PRIVATE
+    Qt6::Core
+    Qt6::Network
+)
+
+target_link_libraries(device-app-qml PRIVATE
+    Qt6::Core
+    Qt6::Network
+    Qt6::Charts
+    Qt6::Qml
+    Qt6::Quick
+    Qt6::QuickControls2
 )
