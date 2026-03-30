@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QObject>
+#include <QJsonObject>
 
 #include "core/types.h"
 
@@ -24,6 +25,12 @@ public:
     void saveChartSettings(const ChartSettings &settings) const;
     InstrumentControlSettings loadInstrumentControlSettings() const;
     void saveInstrumentControlSettings(const InstrumentControlSettings &settings) const;
+    QJsonObject loadAiChatState() const;
+    void saveAiChatState(const QJsonObject &state) const;
+    QJsonObject loadAiProviderConfig() const;
+    void saveAiProviderConfig(const QJsonObject &config) const;
+    QJsonObject loadAiSummaryHistory() const;
+    void saveAiSummaryHistory(const QJsonObject &history) const;
 };
 
 class MethodRepository : public QObject {
@@ -46,6 +53,9 @@ public:
     QString saveFrame(const SpectrumFrame &frame) const;
     SpectrumFrame loadFrame(const QString &filePath) const;
     QString exportFrameCsv(const SpectrumFrame &frame, const QString &baseName = QString()) const;
+    QString saveJsonBlob(const QJsonObject &object, const QString &baseName = QString()) const;
+    QString saveTextBlob(const QString &text, const QString &baseName = QString(),
+                         const QString &suffix = ".txt") const;
 };
 
 }  // namespace deviceapp

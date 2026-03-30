@@ -2,6 +2,9 @@
 set -euo pipefail
 
 PID_FILE="${PID_FILE:-/tmp/device-gateway.pid}"
+MODE_FILE="${MODE_FILE:-/tmp/device-web.mode}"
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+BUILD_DIR="${BUILD_DIR:-$ROOT_DIR/build-local}"
 
 if [[ -f "$PID_FILE" ]]; then
   PID="$(cat "$PID_FILE")"
@@ -12,6 +15,6 @@ if [[ -f "$PID_FILE" ]]; then
   rm -f "$PID_FILE"
 fi
 
-pkill -f "build-local/device-gateway|/device-gateway" >/dev/null 2>&1 || true
+pkill -f "${BUILD_DIR}/device-gateway( |$)" >/dev/null 2>&1 || true
+rm -f "$MODE_FILE"
 echo "gateway 已停止"
-

@@ -96,6 +96,36 @@ void SettingsRepository::saveInstrumentControlSettings(const InstrumentControlSe
     writeJsonObject(AppSettings::configPath(), root);
 }
 
+QJsonObject SettingsRepository::loadAiChatState() const {
+    return readJsonObject(AppSettings::configPath()).value("aiChat").toObject();
+}
+
+void SettingsRepository::saveAiChatState(const QJsonObject &state) const {
+    QJsonObject root = readJsonObject(AppSettings::configPath());
+    root["aiChat"] = state;
+    writeJsonObject(AppSettings::configPath(), root);
+}
+
+QJsonObject SettingsRepository::loadAiProviderConfig() const {
+    return readJsonObject(AppSettings::configPath()).value("aiProvider").toObject();
+}
+
+void SettingsRepository::saveAiProviderConfig(const QJsonObject &config) const {
+    QJsonObject root = readJsonObject(AppSettings::configPath());
+    root["aiProvider"] = config;
+    writeJsonObject(AppSettings::configPath(), root);
+}
+
+QJsonObject SettingsRepository::loadAiSummaryHistory() const {
+    return readJsonObject(AppSettings::configPath()).value("aiSummaryHistory").toObject();
+}
+
+void SettingsRepository::saveAiSummaryHistory(const QJsonObject &history) const {
+    QJsonObject root = readJsonObject(AppSettings::configPath());
+    root["aiSummaryHistory"] = history;
+    writeJsonObject(AppSettings::configPath(), root);
+}
+
 MethodRepository::MethodRepository(QObject *parent) : QObject(parent) {
     AppSettings::ensureDirectories();
 }
@@ -140,6 +170,25 @@ QString FrameRepository::exportFrameCsv(const SpectrumFrame &frame, const QStrin
         for (int i = 0; i < frame.masses.size() && i < frame.intensities.size(); ++i) {
             stream << frame.masses[i] << "," << frame.intensities[i] << "\n";
         }
+    }
+    return path;
+}
+
+QString FrameRepository::saveJsonBlob(const QJsonObject &object, const QString &baseName) const {
+    const QString fileName = baseName.trimmed().isEmpty() ? stampedName("snapshot", ".json") : baseName.trimmed() + ".json";
+    const QString path = AppSettings::frameDirectory() + "/" + fileName;
+    writeJsonObject(path, object);
+    return path;
+}
+
+QString FrameRepository::saveTextBlob(const QString &text, const QString &baseName, const QString &suffix) const {
+    const QString normalizedSuffix = suffix.startsWith('.') ? suffix : "." + suffix;
+    const QString fileName = baseName.trimmed().isEmpty() ? stampedName("report", normalizedSuffix) : baseName.trimmed() + normalizedSuffix;
+    const QString path = AppSettings::frameDirectory() + "/" + fileName;
+    QFile file(path);
+    if (file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text)) {
+        QTextStream stream(&file);
+        stream << text;
     }
     return path;
 }

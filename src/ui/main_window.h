@@ -2,6 +2,7 @@
 
 #include <QMainWindow>
 #include <QByteArray>
+#include <QString>
 
 #include "app/application_context.h"
 #include "core/types.h"
@@ -83,6 +84,10 @@ protected:
     QAction *calibrateAction_;
     QAction *filamentSwitchAction_;
     QAction *saveFrameAction_;
+    QAction *pullModelAction_;
+    QAction *aiSummaryAction_;
+    QAction *aiTroubleshootAction_;
+    QAction *exportAiReportAction_;
     QAction *disconnectAction_;
     QAction *openConnectionAction_;
     QAction *openInstrumentControlAction_;
@@ -96,6 +101,8 @@ protected:
     QMenu *viewMenu_;
     QTimer *statusRefreshTimer_;
     DeviceConnectionConfig lastConnectionConfig_;
+    QString lastAiSummary_;
+    QString lastAiTroubleshoot_;
     QMap<InstrumentSwitch, QAction *> switchActions_;
 };
 

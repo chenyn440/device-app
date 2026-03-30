@@ -65,6 +65,16 @@ bash scripts/local_web_start.sh
 bash scripts/local_web_stop.sh
 ```
 
+智谱云端 AI（可选）:
+
+```bash
+export DEVICE_APP_AI_PROVIDER=cloud_zhipu
+export DEVICE_APP_ZHIPU_API_KEY='你的智谱Key'
+export DEVICE_APP_ZHIPU_BASE_URL='https://open.bigmodel.cn/api/paas/v4'
+export DEVICE_APP_ZHIPU_MODEL='glm-4-flash'
+bash scripts/local_web_start.sh
+```
+
 QML Desktop (Tune + Monitor 首期):
 
 ```bash
@@ -90,6 +100,44 @@ bash scripts/deploy-tencent-cloud.sh \
 
 ```text
 http://<腾讯云公网IP>:8787/
+```
+
+每次改完自动执行「本地提交推送 + 远端拉取 + 远端打包」：
+
+```bash
+bash scripts/git-sync-remote-package.sh \
+  --message "your commit message" \
+  --host <腾讯云公网IP> \
+  --user root \
+  --identity ~/.ssh/id_rsa \
+  --remote-dir /opt/device-app
+```
+
+
+
+## QML 浏览器版（WebAssembly）
+
+说明：`http://127.0.0.1:8787/` 当前默认是 `web/` 目录的静态页面，不是 `web-qml/qml/Main.qml`。
+
+如果要在浏览器打开“当前 QML 页面”，请走 WASM 流程：
+
+```bash
+# 1) 本地构建 QML-WASM（需要 Qt for WebAssembly）
+bash scripts/build-qml-wasm.sh
+
+# 2) 本地预览
+bash scripts/preview-qml-wasm.sh
+```
+
+发布到腾讯云（静态资源）：
+
+```bash
+bash scripts/deploy-qml-wasm-tencent.sh \
+  --host <腾讯云公网IP> \
+  --user root \
+  --identity ~/.ssh/id_rsa \
+  --remote-dir /opt/device-app-web \
+  --build
 ```
 
 ## 目录概览

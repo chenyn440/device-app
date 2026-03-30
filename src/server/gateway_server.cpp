@@ -1,5 +1,6 @@
 #include "server/gateway_server.h"
 
+#include <QDateTime>
 #include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -29,6 +30,30 @@ bool isPathSafe(const QString &path) {
     return !path.contains("..") && !path.contains('\\');
 }
 
+ScanSettings inferScanSettingsFromFrame(const SpectrumFrame &frame) {
+    ScanSettings settings;
+    settings.mode = frame.scanMode;
+    if (!frame.masses.isEmpty()) {
+        settings.massStart = frame.masses.first();
+        settings.massEnd = frame.masses.last();
+        if (settings.massEnd < settings.massStart) {
+            std::swap(settings.massStart, settings.massEnd);
+        }
+    }
+    return settings;
+}
+
+QString composeAiReport(const QString &summary, const QString &troubleshoot) {
+    QString report;
+    report += "调谐 AI 报告\n";
+    report += "生成时间: " + QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss") + "\n\n";
+    report += "[AI总结]\n";
+    report += summary.trimmed().isEmpty() ? "无\n" : summary.trimmed() + "\n";
+    report += "\n[疑难解答]\n";
+    report += troubleshoot.trimmed().isEmpty() ? "无\n" : troubleshoot.trimmed() + "\n";
+    return report;
+}
+
 }  // namespace
 
 GatewayServer::GatewayServer(quint16 port, QString webRoot, QObject *parent)
@@ -56,10 +81,15 @@ GatewayServer::GatewayServer(quint16 port, QString webRoot, QObject *parent)
 
 bool GatewayServer::start(QString *errorMessage) {
     if (!server_.listen(QHostAddress::LocalHost, port_)) {
-        if (errorMessage) {
-            *errorMessage = server_.errorString();
+        const QString localhostError = server_.errorString();
+        if (!server_.listen(QHostAddress::Any, port_)) {
+            if (errorMessage) {
+                *errorMessage = QString("listen LocalHost failed: %1; listen Any failed: %2")
+                                    .arg(localhostError, server_.errorString());
+            }
+            return false;
         }
-        return false;
+        qWarning().noquote() << "listen(LocalHost) failed, fallback to Any:" << localhostError;
     }
     qInfo().noquote() << "Gateway listening on port" << server_.serverPort();
     qInfo().noquote() << "Web root:" << webRoot_;
@@ -275,6 +305,120 @@ void GatewayServer::handleApiRequest(QTcpSocket *socket, const HttpRequest &requ
         return;
     }
 
+    if (request.path == "/api/ai/model/status" && request.method == "GET") {
+        const AiResult result = context_.aiAssistantService->modelStatus();
+        if (!result.success) {
+            writeJsonResponse(socket, 500, errorEnvelope(result.message));
+            return;
+        }
+        writeJsonResponse(socket, 200, okEnvelope(result.payload));
+        return;
+    }
+
+    if (request.path == "/api/ai/model/pull" && request.method == "POST") {
+        const QString model = bodyJson().value("model").toString();
+        const AiResult result = context_.aiAssistantService->pullModel(model);
+        if (!result.success) {
+            writeJsonResponse(socket, 500, errorEnvelope(result.message));
+            return;
+        }
+        writeJsonResponse(socket, 200, okEnvelope(QJsonObject{
+                                               {"model", model.trimmed().isEmpty() ? context_.aiAssistantService->modelTag() : model.trimmed()},
+                                               {"status", result.message},
+                                           }));
+        return;
+    }
+
+    if (request.path == "/api/ai/tune/summary" && request.method == "POST") {
+        if (!hasFrame_) {
+            writeJsonResponse(socket, 400, errorEnvelope("no frame available"));
+            return;
+        }
+        const TuneParameters tune = context_.tuneService->currentParameters();
+        const ScanSettings scan = inferScanSettingsFromFrame(latestFrame_);
+        const AiResult result = context_.aiAssistantService->summarizeTune(latestStatus_, latestFrame_, tune, scan);
+        if (!result.success) {
+            writeJsonResponse(socket, 500, errorEnvelope(result.message));
+            return;
+        }
+        writeJsonResponse(socket, 200, okEnvelope(QJsonObject{{"summary", result.content}}));
+        return;
+    }
+
+    if (request.path == "/api/ai/tune/troubleshoot" && request.method == "POST") {
+        if (!hasFrame_) {
+            writeJsonResponse(socket, 400, errorEnvelope("no frame available"));
+            return;
+        }
+        const QString question = bodyJson().value("question").toString().trimmed();
+        if (question.isEmpty()) {
+            writeJsonResponse(socket, 400, errorEnvelope("question is required"));
+            return;
+        }
+        const TuneParameters tune = context_.tuneService->currentParameters();
+        const ScanSettings scan = inferScanSettingsFromFrame(latestFrame_);
+        const AiResult result = context_.aiAssistantService->troubleshootTune(latestStatus_, latestFrame_, tune, scan, question);
+        if (!result.success) {
+            writeJsonResponse(socket, 500, errorEnvelope(result.message));
+            return;
+        }
+        writeJsonResponse(socket, 200, okEnvelope(QJsonObject{{"answer", result.content}}));
+        return;
+    }
+
+    if (request.path == "/api/ai/tune/export" && request.method == "POST") {
+        if (!hasFrame_) {
+            writeJsonResponse(socket, 400, errorEnvelope("no frame available"));
+            return;
+        }
+        const QJsonObject payload = bodyJson();
+        const QString question = payload.value("question").toString().trimmed();
+        const bool includeTroubleshoot = payload.value("includeTroubleshoot").toBool(!question.isEmpty());
+
+        const TuneParameters tune = context_.tuneService->currentParameters();
+        const ScanSettings scan = inferScanSettingsFromFrame(latestFrame_);
+        const AiResult summary = context_.aiAssistantService->summarizeTune(latestStatus_, latestFrame_, tune, scan);
+        if (!summary.success) {
+            writeJsonResponse(socket, 500, errorEnvelope(summary.message));
+            return;
+        }
+
+        QString troubleshootText;
+        if (includeTroubleshoot && !question.isEmpty()) {
+            const AiResult troubleshoot = context_.aiAssistantService->troubleshootTune(
+                latestStatus_, latestFrame_, tune, scan, question);
+            if (!troubleshoot.success) {
+                writeJsonResponse(socket, 500, errorEnvelope(troubleshoot.message));
+                return;
+            }
+            troubleshootText = troubleshoot.content;
+        }
+
+        const QString frameJsonPath = context_.persistenceService->saveFrame(latestFrame_);
+        const QString frameCsvPath = context_.persistenceService->exportFrameCsv(latestFrame_);
+        const QJsonObject snapshot{
+            {"status", toJson(latestStatus_)},
+            {"scan", toJson(scan)},
+            {"tune", toJson(tune)},
+            {"frame", toJson(latestFrame_)},
+        };
+        const QString snapshotPath = context_.persistenceService->saveSnapshotJson(snapshot, "tune_snapshot");
+        const QString reportPath = context_.persistenceService->saveReportText(
+            composeAiReport(summary.content, troubleshootText), "ai_report");
+
+        writeJsonResponse(socket, 200, okEnvelope(QJsonObject{
+                                               {"summary", summary.content},
+                                               {"troubleshoot", troubleshootText},
+                                               {"paths", QJsonObject{
+                                                             {"frameJson", frameJsonPath},
+                                                             {"frameCsv", frameCsvPath},
+                                                             {"snapshotJson", snapshotPath},
+                                                             {"reportTxt", reportPath},
+                                                         }},
+                                           }));
+        return;
+    }
+
     if (request.path == "/api/frame/save" && request.method == "POST") {
         if (!hasFrame_) {
             writeJsonResponse(socket, 400, errorEnvelope("no frame available"));
@@ -322,6 +466,9 @@ void GatewayServer::writeTextResponse(QTcpSocket *socket, int statusCode, const 
     QByteArray response;
     response += "HTTP/1.1 " + QByteArray::number(statusCode) + " " + statusText(statusCode) + "\r\n";
     response += "Content-Type: " + contentType + "\r\n";
+    response += "Cache-Control: no-store, no-cache, must-revalidate, max-age=0\r\n";
+    response += "Pragma: no-cache\r\n";
+    response += "Expires: 0\r\n";
     response += "Access-Control-Allow-Origin: *\r\n";
     response += "Access-Control-Allow-Headers: Content-Type, Authorization\r\n";
     response += "Access-Control-Allow-Methods: GET,POST,OPTIONS\r\n";
@@ -432,8 +579,14 @@ QByteArray GatewayServer::mimeTypeForPath(const QString &path) {
     if (path.endsWith(".js")) {
         return "application/javascript; charset=utf-8";
     }
+    if (path.endsWith(".wasm")) {
+        return "application/wasm";
+    }
     if (path.endsWith(".css")) {
         return "text/css; charset=utf-8";
+    }
+    if (path.endsWith(".svg")) {
+        return "image/svg+xml";
     }
     if (path.endsWith(".json")) {
         return "application/json; charset=utf-8";

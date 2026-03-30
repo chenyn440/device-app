@@ -28,6 +28,10 @@ PageActionHeader::PageActionHeader(QWidget *parent) : QWidget(parent) {
     auto *filamentSwitchButton = createActionButton("灯丝切换");
     auto *saveButton = createActionButton("数据保存");
     auto *refreshButton = createActionButton("谱图刷新");
+    auto *pullModelButton = createActionButton("下载模型");
+    auto *aiSummaryButton = createActionButton("AI总结");
+    auto *troubleshootButton = createActionButton("疑难解答");
+    auto *exportReportButton = createActionButton("导出AI报告");
 
     actionButtons_.insert(HeaderAction::Start, startButton);
     actionButtons_.insert(HeaderAction::Stop, stopButton);
@@ -35,6 +39,10 @@ PageActionHeader::PageActionHeader(QWidget *parent) : QWidget(parent) {
     actionButtons_.insert(HeaderAction::FilamentSwitch, filamentSwitchButton);
     actionButtons_.insert(HeaderAction::SaveData, saveButton);
     actionButtons_.insert(HeaderAction::RefreshChart, refreshButton);
+    actionButtons_.insert(HeaderAction::PullModel, pullModelButton);
+    actionButtons_.insert(HeaderAction::AiSummary, aiSummaryButton);
+    actionButtons_.insert(HeaderAction::Troubleshoot, troubleshootButton);
+    actionButtons_.insert(HeaderAction::ExportAiReport, exportReportButton);
 
     switchButtons_.insert(InstrumentSwitch::ForePump, forePumpButton);
     switchButtons_.insert(InstrumentSwitch::ForeValve, foreValveButton);
@@ -55,6 +63,10 @@ PageActionHeader::PageActionHeader(QWidget *parent) : QWidget(parent) {
     layout->addWidget(filamentSwitchButton);
     layout->addWidget(saveButton);
     layout->addWidget(refreshButton);
+    layout->addWidget(pullModelButton);
+    layout->addWidget(aiSummaryButton);
+    layout->addWidget(troubleshootButton);
+    layout->addWidget(exportReportButton);
     layout->addStretch();
 
     connect(startButton, &QPushButton::clicked, this, &PageActionHeader::startRequested);
@@ -63,6 +75,10 @@ PageActionHeader::PageActionHeader(QWidget *parent) : QWidget(parent) {
     connect(filamentSwitchButton, &QPushButton::clicked, this, &PageActionHeader::filamentSwitchRequested);
     connect(saveButton, &QPushButton::clicked, this, &PageActionHeader::saveRequested);
     connect(refreshButton, &QPushButton::clicked, this, &PageActionHeader::refreshRequested);
+    connect(pullModelButton, &QPushButton::clicked, this, &PageActionHeader::pullModelRequested);
+    connect(aiSummaryButton, &QPushButton::clicked, this, &PageActionHeader::aiSummaryRequested);
+    connect(troubleshootButton, &QPushButton::clicked, this, &PageActionHeader::troubleshootRequested);
+    connect(exportReportButton, &QPushButton::clicked, this, &PageActionHeader::exportAiReportRequested);
 
     for (auto it = switchButtons_.cbegin(); it != switchButtons_.cend(); ++it) {
         const InstrumentSwitch instrumentSwitch = it.key();

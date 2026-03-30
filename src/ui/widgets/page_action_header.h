@@ -15,7 +15,11 @@ enum class HeaderAction {
     Calibrate,
     FilamentSwitch,
     SaveData,
-    RefreshChart
+    RefreshChart,
+    PullModel,
+    AiSummary,
+    Troubleshoot,
+    ExportAiReport
 };
 
 class PageActionHeader : public QWidget {
@@ -36,6 +40,10 @@ signals:
     void filamentSwitchRequested();
     void saveRequested();
     void refreshRequested();
+    void pullModelRequested();
+    void aiSummaryRequested();
+    void troubleshootRequested();
+    void exportAiReportRequested();
     void switchStateChanged(InstrumentSwitch instrumentSwitch, bool checked);
 
 private:

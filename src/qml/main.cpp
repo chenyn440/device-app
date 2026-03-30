@@ -1,4 +1,7 @@
 #include <QApplication>
+#include <QCoreApplication>
+#include <QFont>
+#include <QFontDatabase>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QQuickStyle>
@@ -7,9 +10,19 @@
 
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
-    QApplication::setApplicationName("device-app");
-    QApplication::setOrganizationName("deviceapp");
+    QGuiApplication::setApplicationName("device-app");
+    QGuiApplication::setOrganizationName("deviceapp");
     QQuickStyle::setStyle("Basic");
+
+    const int fontId = QFontDatabase::addApplicationFont(":/qml/fonts/HiraginoSansGB.ttc");
+    if (fontId >= 0) {
+        const QStringList families = QFontDatabase::applicationFontFamilies(fontId);
+        if (!families.isEmpty()) {
+            QFont appFont = app.font();
+            appFont.setFamily(families.first());
+            QGuiApplication::setFont(appFont);
+        }
+    }
 
     QQmlApplicationEngine engine;
     deviceapp::AppState appState;
@@ -20,5 +33,5 @@ int main(int argc, char *argv[]) {
                      Qt::QueuedConnection);
     engine.load(url);
 
-    return QApplication::exec();
+    return QGuiApplication::exec();
 }

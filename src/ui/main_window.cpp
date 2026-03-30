@@ -6,6 +6,7 @@
 #include <QDockWidget>
 #include <QFileDialog>
 #include <QHBoxLayout>
+#include <QInputDialog>
 #include <QListWidget>
 #include <QListWidgetItem>
 #include <QMenu>
@@ -19,6 +20,7 @@
 #include <QToolButton>
 #include <QToolBar>
 #include <QVBoxLayout>
+#include <QJsonDocument>
 
 #include "core/app_settings.h"
 #include "ui/dialogs/chart_settings_dialog.h"
@@ -239,6 +241,10 @@ void MainWindow::setupToolbar() {
         const QString csvPath = context_->persistenceService->exportFrameCsv(lastFrame_);
         statusBar()->showMessage(QString("已保存 JSON: %1 | CSV: %2").arg(jsonPath, csvPath), 5000);
     });
+    pullModelAction_ = toolbar_->addAction("下载模型");
+    aiSummaryAction_ = toolbar_->addAction("AI总结");
+    aiTroubleshootAction_ = toolbar_->addAction("疑难解答");
+    exportAiReportAction_ = toolbar_->addAction("导出AI报告");
 }
 
 void MainWindow::wireSignals() {
@@ -305,6 +311,85 @@ void MainWindow::wireSignals() {
     connect(tunePage_, &TunePage::scanSettingsRequested, this, &MainWindow::openScanSettingsDialog);
     connect(tunePage_, &TunePage::switchStateChanged, context_->deviceAdapter.get(), &IDeviceAdapter::setSwitchState);
     connect(tunePage_, &TunePage::filamentSwitchRequested, tunePage_, &TunePage::toggleDetectorMode);
+    connect(tunePage_, &TunePage::pullModelRequested, this, [this]() {
+        const AiResult result = context_->aiAssistantService->pullModel();
+        if (!result.success) {
+            showError("模型下载失败: " + result.message);
+            return;
+        }
+        statusBar()->showMessage("模型下载完成: " + context_->aiAssistantService->modelTag(), 4000);
+    });
+    connect(tunePage_, &TunePage::aiSummaryRequested, this, [this]() {
+        if (!lastFrame_.timestamp.isValid()) {
+            showError("当前没有可用于 AI 总结的谱图数据");
+            return;
+        }
+        const AiResult result = context_->aiAssistantService->summarizeTune(
+            currentStatus_, lastFrame_, tunePage_->tuneParameters(), tunePage_->scanSettings());
+        if (!result.success) {
+            showError("AI总结失败: " + result.message);
+            return;
+        }
+        lastAiSummary_ = result.content;
+        QMessageBox::information(this, "AI总结", result.content);
+    });
+    connect(tunePage_, &TunePage::troubleshootRequested, this, [this]() {
+        if (!lastFrame_.timestamp.isValid()) {
+            showError("当前没有可用于疑难解答的谱图数据");
+            return;
+        }
+        bool ok = false;
+        const QString question = QInputDialog::getText(this, "疑难解答", "请输入问题：", QLineEdit::Normal, "", &ok).trimmed();
+        if (!ok || question.isEmpty()) {
+            return;
+        }
+        const AiResult result = context_->aiAssistantService->troubleshootTune(
+            currentStatus_, lastFrame_, tunePage_->tuneParameters(), tunePage_->scanSettings(), question);
+        if (!result.success) {
+            showError("疑难解答失败: " + result.message);
+            return;
+        }
+        lastAiTroubleshoot_ = result.content;
+        QMessageBox::information(this, "疑难解答", result.content);
+    });
+    connect(tunePage_, &TunePage::exportAiReportRequested, this, [this]() {
+        if (!lastFrame_.timestamp.isValid()) {
+            showError("当前没有可导出的谱图数据");
+            return;
+        }
+        QString summary = lastAiSummary_;
+        if (summary.trimmed().isEmpty()) {
+            const AiResult summaryResult = context_->aiAssistantService->summarizeTune(
+                currentStatus_, lastFrame_, tunePage_->tuneParameters(), tunePage_->scanSettings());
+            if (!summaryResult.success) {
+                showError("导出前生成 AI 总结失败: " + summaryResult.message);
+                return;
+            }
+            summary = summaryResult.content;
+            lastAiSummary_ = summary;
+        }
+        const QString frameJsonPath = context_->persistenceService->saveFrame(lastFrame_);
+        const QString frameCsvPath = context_->persistenceService->exportFrameCsv(lastFrame_);
+        const QJsonObject snapshot{
+            {"status", toJson(currentStatus_)},
+            {"scan", toJson(tunePage_->scanSettings())},
+            {"tune", toJson(tunePage_->tuneParameters())},
+            {"frame", toJson(lastFrame_)},
+        };
+        const QString snapshotPath = context_->persistenceService->saveSnapshotJson(snapshot, "tune_snapshot");
+        QString report = "调谐 AI 报告\n\n[AI总结]\n" + summary + "\n\n[疑难解答]\n";
+        report += lastAiTroubleshoot_.trimmed().isEmpty() ? "无\n" : (lastAiTroubleshoot_ + "\n");
+        const QString reportPath = context_->persistenceService->saveReportText(report, "ai_report");
+        statusBar()->showMessage(
+            QString("已导出 JSON:%1 | CSV:%2 | 快照:%3 | 报告:%4")
+                .arg(frameJsonPath, frameCsvPath, snapshotPath, reportPath),
+            6000);
+    });
+
+    connect(pullModelAction_, &QAction::triggered, tunePage_, &TunePage::pullModelRequested);
+    connect(aiSummaryAction_, &QAction::triggered, tunePage_, &TunePage::aiSummaryRequested);
+    connect(aiTroubleshootAction_, &QAction::triggered, tunePage_, &TunePage::troubleshootRequested);
+    connect(exportAiReportAction_, &QAction::triggered, tunePage_, &TunePage::exportAiReportRequested);
     connect(tunePage_, &TunePage::connectRequested, this, [this](const DeviceConnectionConfig &config) {
         lastConnectionConfig_ = config;
         tunePage_->setConnectionConfig(config);
@@ -498,6 +583,18 @@ void MainWindow::updateActionStates(const InstrumentStatus &status) {
     }
     if (saveFrameAction_) {
         saveFrameAction_->setEnabled(lastFrame_.timestamp.isValid());
+    }
+    if (pullModelAction_) {
+        pullModelAction_->setEnabled(true);
+    }
+    if (aiSummaryAction_) {
+        aiSummaryAction_->setEnabled(lastFrame_.timestamp.isValid());
+    }
+    if (aiTroubleshootAction_) {
+        aiTroubleshootAction_->setEnabled(lastFrame_.timestamp.isValid());
+    }
+    if (exportAiReportAction_) {
+        exportAiReportAction_->setEnabled(lastFrame_.timestamp.isValid());
     }
     if (disconnectAction_) {
         disconnectAction_->setEnabled(connected && !scanning);

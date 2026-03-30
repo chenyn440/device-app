@@ -8,5 +8,6 @@
     <file alias="components/AppCheckBox.qml">../../web-qml/qml/components/AppCheckBox.qml</file>
     <file alias="components/AppPanel.qml">../../web-qml/qml/components/AppPanel.qml</file>
     <file alias="components/AppTabHeader.qml">../../web-qml/qml/components/AppTabHeader.qml</file>
+    <file alias="fonts/HiraginoSansGB.ttc">fonts/HiraginoSansGB.ttc</file>
   </qresource>
 </RCC>

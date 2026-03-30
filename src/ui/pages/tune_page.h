@@ -48,6 +48,10 @@ signals:
     void scanSettingsRequested();
     void switchStateChanged(InstrumentSwitch instrumentSwitch, bool checked);
     void filamentSwitchRequested();
+    void pullModelRequested();
+    void aiSummaryRequested();
+    void troubleshootRequested();
+    void exportAiReportRequested();
     void connectRequested(const DeviceConnectionConfig &config);
     void disconnectRequested();
 

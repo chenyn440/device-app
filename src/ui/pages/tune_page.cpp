@@ -372,6 +372,10 @@ TunePage::TunePage(ScanControlService *scanControlService, TuneService *tuneServ
     connect(actionHeader_, &PageActionHeader::calibrateRequested, this, &TunePage::calibrationRequested);
     connect(actionHeader_, &PageActionHeader::filamentSwitchRequested, this, &TunePage::filamentSwitchRequested);
     connect(actionHeader_, &PageActionHeader::switchStateChanged, this, &TunePage::switchStateChanged);
+    connect(actionHeader_, &PageActionHeader::pullModelRequested, this, &TunePage::pullModelRequested);
+    connect(actionHeader_, &PageActionHeader::aiSummaryRequested, this, &TunePage::aiSummaryRequested);
+    connect(actionHeader_, &PageActionHeader::troubleshootRequested, this, &TunePage::troubleshootRequested);
+    connect(actionHeader_, &PageActionHeader::exportAiReportRequested, this, &TunePage::exportAiReportRequested);
     connect(scanSettingsButton_, &QPushButton::clicked, this, &TunePage::scanSettingsRequested);
     connect(fullScanCheck_, &QCheckBox::toggled, this, [this](bool checked) {
         if (!checked) {
